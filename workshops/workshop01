@@ -1,1 +1,10 @@
+Woekshop 01
 
+1. Ver el video sobre REST https://www.youtube.com/watch?v=aoOKxUOhg18&feature=emb_title 
+
+2. Realizar la guia de instalación y ejecución de un REST Api con Nodejs, Express y Mongo https://www.freecodecamp.org/news/build-a-restful-api-using-node-express-and-mongodb/. Pueden usar la opción sugerida en la guia de Mongo o la instalación local, lo que cambiaria es basicante el string de conexion:
+
+mongodb+srv://nishant:********@cluster0.xduyh.mongodb.net/testDatabase
+Para la guia debe asegurarse de instalar NPM  https://nodejs.org/en/download y luego seguir la guia.
+
+Algo similar puede encontrar en este codigo: https://github.com/barroyo/isw-711/tree/2Q2023/weeks/week-2/server
