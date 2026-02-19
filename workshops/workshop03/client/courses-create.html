@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear / Editar Curso - ISW-711</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Crear o editar curso</h1>
+
+    <nav>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="courses-list.html">Lista de Cursos</a></li>
+        <li><a href="courses-create.html">Crear Curso</a></li>
+        <li><a href="professors-list.html">Lista de Profesores</a></li>
+      </ul>
+    </nav>
+
+    <div id="message" class="message"></div>
+
+    <h2 id="formTitle">Nuevo curso</h2>
+    <div class="form-section">
+      <form id="courseForm">
+        <div class="form-group">
+          <label for="nombre">Nombre del curso</label>
+          <input type="text" id="nombre" name="nombre" required>
+        </div>
+
+        <div class="form-group">
+          <label for="codigo">Código del curso</label>
+          <input type="text" id="codigo" name="codigo" required>
+        </div>
+
+        <div class="form-group">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" name="descripcion" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="idProfesor">Profesor</label>
+          <select id="idProfesor" name="idProfesor" required>
+            <option value="">Cargando profesores...</option>
+          </select>
+        </div>
+
+        <input type="hidden" id="courseId" name="courseId">
+
+        <button type="submit" id="submitBtn">Crear curso</button>
+        <a href="courses-list.html" class="btn cancel">Volver a la lista</a>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:3001';
+
+    window.onload = function () {
+      loadTeachers();
+      checkEditMode();
+    };
+
+    function checkEditMode() {
+      const params = new URLSearchParams(window.location.search);
+      const courseId = params.get('id');
+      if (courseId) {
+        document.getElementById('formTitle').textContent = 'Editar curso';
+        document.getElementById('submitBtn').textContent = 'Guardar cambios';
+        loadCourseForEdit(courseId);
+      }
+    }
+
+    function loadCourseForEdit(courseId) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', `${API_BASE_URL}/course?id=${courseId}`);
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const course = JSON.parse(xhr.responseText);
+          document.getElementById('courseId').value = course._id;
+          document.getElementById('nombre').value = course.nombre;
+          document.getElementById('codigo').value = course.codigo;
+          document.getElementById('descripcion').value = course.descripcion;
+          loadTeachers(function () {
+            document.getElementById('idProfesor').value = course.profesor_id._id || course.profesor_id;
+          });
+        } else {
+          showMessage('Error al cargar el curso', 'error');
+        }
+      };
+      xhr.onerror = function () {
+        showMessage('Error de conexión', 'error');
+      };
+      xhr.send();
+    }
+
+    function showMessage(text, type) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = text;
+      messageDiv.className = `message ${type} show`;
+      setTimeout(() => messageDiv.classList.remove('show'), 5000);
+    }
+
+    function loadTeachers(callback) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', `${API_BASE_URL}/professor`);
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const teachers = JSON.parse(xhr.responseText);
+          const select = document.getElementById('idProfesor');
+          const currentValue = select.value;
+          select.innerHTML = '<option value="">Seleccione un profesor</option>';
+          teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher._id;
+            option.textContent = `${teacher.nombre} ${teacher.apellidos} (${teacher.cedula})`;
+            select.appendChild(option);
+          });
+          if (callback) callback();
+          else if (currentValue) select.value = currentValue;
+        } else {
+          showMessage('Error al cargar profesores', 'error');
+        }
+      };
+      xhr.onerror = function () {
+        showMessage('Error de conexión al cargar profesores', 'error');
+      };
+      xhr.send();
+    }
+
+    document.getElementById('courseForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const courseId = document.getElementById('courseId').value;
+      const courseData = {
+        nombre: document.getElementById('nombre').value,
+        codigo: document.getElementById('codigo').value,
+        descripcion: document.getElementById('descripcion').value,
+        profesor_id: document.getElementById('idProfesor').value
+      };
+
+      if (courseId) {
+        updateCourse(courseId, courseData);
+      } else {
+        createCourse(courseData);
+      }
+    });
+
+    function createCourse(courseData) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE_URL}/course`);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = function () {
+        if (xhr.status === 201) {
+          showMessage('Curso creado correctamente', 'success');
+          document.getElementById('courseForm').reset();
+          document.getElementById('courseId').value = '';
+        } else {
+          const error = JSON.parse(xhr.responseText);
+          showMessage(error.error || 'Error al crear el curso', 'error');
+        }
+      };
+      xhr.onerror = function () {
+        showMessage('Error de conexión', 'error');
+      };
+      xhr.send(JSON.stringify(courseData));
+    }
+
+    function updateCourse(courseId, courseData) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', `${API_BASE_URL}/course?id=${courseId}`);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          showMessage('Curso actualizado correctamente', 'success');
+          document.getElementById('courseId').value = '';
+          document.getElementById('submitBtn').textContent = 'Crear curso';
+          document.getElementById('formTitle').textContent = 'Nuevo curso';
+          window.history.replaceState({}, document.title, 'courses-create.html');
+        } else {
+          const error = JSON.parse(xhr.responseText);
+          showMessage(error.error || 'Error al actualizar el curso', 'error');
+        }
+      };
+      xhr.onerror = function () {
+        showMessage('Error de conexión', 'error');
+      };
+      xhr.send(JSON.stringify(courseData));
+    }
+  </script>
+</body>
+
+
+</html>\

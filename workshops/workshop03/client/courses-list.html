@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Cursos - ISW-711</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Lista de cursos</h1>
+
+    <nav>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="courses-list.html">Lista de Cursos</a></li>
+        <li><a href="courses-create.html">Crear Curso</a></li>
+        <li><a href="professors-list.html">Lista de Profesores</a></li>
+      </ul>
+    </nav>
+
+    <div id="message" class="message"></div>
+
+    <p style="margin-bottom: 15px;">
+      <a href="courses-create.html" class="btn">Crear nuevo curso</a>
+    </p>
+
+    <h2>Cursos registrados</h2>
+    <div id="coursesList" class="courses-list">
+      <div class="loading">Cargando cursos...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:3001';
+
+    window.onload = function () {
+      loadCourses();
+    };
+
+    function showMessage(text, type) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = text;
+      messageDiv.className = `message ${type} show`;
+      setTimeout(() => messageDiv.classList.remove('show'), 5000);
+    }
+
+    function loadCourses() {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', `${API_BASE_URL}/course`);
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const courses = JSON.parse(xhr.responseText);
+          displayCourses(courses);
+        } else {
+          document.getElementById('coursesList').innerHTML = '<div class="message error show">Error al cargar cursos</div>';
+        }
+      };
+      xhr.onerror = function () {
+        document.getElementById('coursesList').innerHTML = '<div class="message error show">Error de conexión</div>';
+      };
+      xhr.send();
+    }
+
+    function displayCourses(courses) {
+      const coursesList = document.getElementById('coursesList');
+      if (!courses || courses.length === 0) {
+        coursesList.innerHTML = '<p>No hay cursos registrados.</p>';
+        return;
+      }
+
+      coursesList.innerHTML = '';
+      courses.forEach(course => {
+        const teacherName = course.profesor_id && course.profesor_id.nombre && course.profesor_id.apellidos
+          ? `${course.profesor_id.nombre} ${course.profesor_id.apellidos}`
+          : 'Profesor no asignado';
+
+        const courseDiv = document.createElement('div');
+        courseDiv.className = 'course-item';
+        courseDiv.innerHTML = `
+          <h3>${course.nombre}</h3>
+          <p><strong>Código:</strong> ${course.codigo}</p>
+          <p><strong>Descripción:</strong> ${course.descripcion}</p>
+          <p><strong>Profesor:</strong> ${teacherName}</p>
+          <div class="course-actions">
+            <a href="courses-create.html?id=${course._id}" class="btn edit">Editar</a>
+            <button class="delete" onclick="deleteCourse('${course._id}')">Eliminar</button>
+          </div>
+        `;
+        coursesList.appendChild(courseDiv);
+      });
+    }
+
+    function deleteCourse(courseId) {
+      if (!confirm('¿Está seguro de que desea eliminar este curso?')) return;
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('DELETE', `${API_BASE_URL}/course?id=${courseId}`);
+      xhr.onload = function () {
+        if (xhr.status === 204 || xhr.status === 200) {
+          showMessage('Curso eliminado correctamente', 'success');
+          loadCourses();
+        } else {
+          const error = JSON.parse(xhr.responseText);
+          showMessage(error.error || 'Error al eliminar el curso', 'error');
+        }
+      };
+      xhr.onerror = function () {
+        showMessage('Error de conexión', 'error');
+      };
+      xhr.send();
+    }
+  </script>
+</body>
+
+</html>
