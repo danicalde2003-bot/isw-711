@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Week 2 - Course Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+    .container { max-width: 600px; margin: auto; }
+    .form-group { margin-bottom: 15px; padding: 10px; border: 1px solid #eee; }
+    input { display: block; width: 100%; margin: 5px 0; padding: 8px; box-sizing: border-box; }
+    .course-item { 
+      background: #f4f4f4; margin: 10px 0; padding: 10px; 
+      display: flex; justify-content: space-between; align-items: center;
+      border-left: 5px solid #007bff;
+    }
+    button { cursor: pointer; padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; }
+    button.delete { background: #dc3545; }
+    button:hover { opacity: 0.8; }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Course Management API</h1>
+
+    <div class="form-group">
+      <h3>Create New Course</h3>
+      <input type="text" id="name" placeholder="Course Name">
+      <input type="text" id="description" placeholder="Description">
+      <button onclick="createCourse()">Create Course</button>
+    </div>
+
+    <h3>Available Courses:</h3>
+    <div id="result">
+      </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api/courses';
+
+    // Función para obtener y listar todos los cursos (GET)
+    async function getCourses() {
+      try {
+        const response = await fetch(API_URL);
+        const courses = await response.json();
+        
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = ''; // Limpiar antes de cargar
+
+        courses.forEach(course => {
+          resultDiv.innerHTML += `
+            <div class="course-item">
+              <div>
+                <strong>${course.name}</strong><br>
+                <small>${course.description || 'No description'}</small>
+              </div>
+              <button class="delete" onclick="deleteCourse('${course._id}')">Delete</button>
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error("Error fetching courses:", err);
+      }
+    }
+
+    // Función para crear un curso (POST)
+    async function createCourse() {
+      const name = document.getElementById('name').value;
+      const description = document.getElementById('description').value;
+
+      if (!name) return alert("Please enter a name");
+
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description })
+        });
+
+        // Limpiar campos y refrescar lista
+        document.getElementById('name').value = '';
+        document.getElementById('description').value = '';
+        getCourses();
+      } catch (err) {
+        console.error("Error creating course:", err);
+      }
+    }
+
+    // Función para borrar un curso (DELETE)
+    async function deleteCourse(id) {
+      if (!confirm("Are you sure?")) return;
+
+      try {
+        await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+        getCourses(); // Refrescar lista
+      } catch (err) {
+        console.error("Error deleting course:", err);
+      }
+    }
+
+    // Cargar cursos al iniciar la página
+    window.onload = getCourses;
+  </script>
+</body>
+
+</html>
