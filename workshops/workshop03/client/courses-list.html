@@ -15,6 +15,8 @@
     <nav>
       <ul>
         <li><a href="index.html">Inicio</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html">Registro</a></li>
         <li><a href="courses-list.html">Lista de Cursos</a></li>
         <li><a href="courses-create.html">Crear Curso</a></li>
         <li><a href="professors-list.html">Lista de Profesores</a></li>
@@ -35,11 +37,22 @@
 
   <script>
     const API_BASE_URL = 'http://localhost:3001';
+    const AUTH_TOKEN_KEY = 'authToken';
+
+    function requireAuth() {
+      const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      return token;
+    }
 
     window.onload = function () {
       loadCourses();
     };
 
+    // Función auxiliar para mostrar alertas que se borran solas
     function showMessage(text, type) {
       const messageDiv = document.getElementById('message');
       messageDiv.textContent = text;
@@ -47,9 +60,14 @@
       setTimeout(() => messageDiv.classList.remove('show'), 5000);
     }
 
+    // Petición al servidor para obtener el listado completo
     function loadCourses() {
+      const token = requireAuth();
+      if (!token) return;
+
       const xhr = new XMLHttpRequest();
       xhr.open('GET', `${API_BASE_URL}/course`);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           const courses = JSON.parse(xhr.responseText);
@@ -64,6 +82,7 @@
       xhr.send();
     }
 
+    // Procesa los datos y crea el HTML para cada curso
     function displayCourses(courses) {
       const coursesList = document.getElementById('coursesList');
       if (!courses || courses.length === 0) {
@@ -93,11 +112,16 @@
       });
     }
 
+    // Función para borrar un curso con confirmación previa
     function deleteCourse(courseId) {
       if (!confirm('¿Está seguro de que desea eliminar este curso?')) return;
 
+      const token = requireAuth();
+      if (!token) return;
+
       const xhr = new XMLHttpRequest();
       xhr.open('DELETE', `${API_BASE_URL}/course?id=${courseId}`);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.onload = function () {
         if (xhr.status === 204 || xhr.status === 200) {
           showMessage('Curso eliminado correctamente', 'success');

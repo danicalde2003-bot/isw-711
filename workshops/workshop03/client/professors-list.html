@@ -15,6 +15,8 @@
     <nav>
       <ul>
         <li><a href="index.html">Inicio</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html">Registro</a></li>
         <li><a href="courses-list.html">Lista de Cursos</a></li>
         <li><a href="courses-create.html">Crear Curso</a></li>
         <li><a href="professors-list.html">Lista de Profesores</a></li>
@@ -31,6 +33,16 @@
 
   <script>
     const API_BASE_URL = 'http://localhost:3001';
+    const AUTH_TOKEN_KEY = 'authToken';
+
+    function requireAuth() {
+      const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      return token;
+    }
 
     window.onload = function () {
       loadProfessors();
@@ -43,9 +55,14 @@
       setTimeout(() => messageDiv.classList.remove('show'), 5000);
     }
 
+    // Va al servidor a pedir la lista de profesores
     function loadProfessors() {
+      const token = requireAuth();
+      if (!token) return;
+
       const xhr = new XMLHttpRequest();
       xhr.open('GET', `${API_BASE_URL}/professor`);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           const professors = JSON.parse(xhr.responseText);
@@ -60,6 +77,7 @@
       xhr.send();
     }
 
+    // Toma la lista de profesores y crea el HTML para cada uno
     function displayProfessors(professors) {
       const listEl = document.getElementById('professorsList');
       if (!professors || professors.length === 0) {

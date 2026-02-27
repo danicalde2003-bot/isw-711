@@ -5,35 +5,29 @@ const mongoose = require('mongoose');
 const path = require('path');
 const Course = require('./models/course');
 const Professor = require('./models/professor');
+const { authenticateToken, generateToken, registerUser } = require('./controllers/auth-jwt');
 
-// MongoDB: local usa workshop01-isw-711; para Atlas definir MONGODB_URI en el entorno
+// MongoDB: Uso local en workshop01-isw-711
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/workshop01-isw-711';
-mongoose.connect(MONGODB_URI);
-const database = mongoose.connection;
-
-database.on('error', (error) => {
-  console.log(error);
-});
-
-database.once('connected', () => {
-  console.log('Database Connected');
-});
+mongoose
+  .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('Database Connected'))
+  .catch((error) => console.error('MongoDB connection error:', error.message));
 
 const app = express();
 
-// middlewares
 app.use(bodyParser.json());
 app.use(cors({
   domains: '*',
   methods: '*'
 }));
 
-// routes
+// AUTH
+app.post('/auth/register', registerUser);
+app.post('/auth/token', generateToken);
 
-// ====== PROFESSOR ROUTES ======
-
-// POST - Create professor
-app.post('/professor', async (req, res) => {
+// POST - Creamos profesor
+app.post('/professor', authenticateToken, async (req, res) => {
   const professor = new Professor({
     nombre: req.body.nombre,
     apellidos: req.body.apellidos,
@@ -50,8 +44,8 @@ app.post('/professor', async (req, res) => {
   }
 });
 
-// GET - Get all professors or single professor
-app.get('/professor', async (req, res) => {
+// GET - Obtener profesor(es)
+app.get('/professor', authenticateToken, async (req, res) => {
   try {
     if (!req.query.id) {
       const data = await Professor.find();
@@ -64,8 +58,8 @@ app.get('/professor', async (req, res) => {
   }
 });
 
-// PUT - Update professor
-app.put('/professor', async (req, res) => {
+// PUT - Actualizar profesor
+app.put('/professor', authenticateToken, async (req, res) => {
   try {
     const id = req.query.id;
     if (!id) return res.status(400).json({ message: 'id is required' });
@@ -91,8 +85,8 @@ app.put('/professor', async (req, res) => {
   }
 });
 
-// DELETE - Delete professor
-app.delete('/professor', async (req, res) => {
+// DELETE - Eliminamos profesor
+app.delete('/professor', authenticateToken, async (req, res) => {
   try {
     const id = req.query.id;
     if (!id) return res.status(400).json({ message: 'id is required' });
@@ -107,10 +101,8 @@ app.delete('/professor', async (req, res) => {
   }
 });
 
-// ====== COURSE ROUTES ======
-
-// POST - Create course
-app.post('/course', async (req, res) => {
+// POST - Creamos curso
+app.post('/course', authenticateToken, async (req, res) => {
   const course = new Course({
     nombre: req.body.nombre,
     codigo: req.body.codigo,
@@ -127,8 +119,8 @@ app.post('/course', async (req, res) => {
   }
 });
 
-// GET - Get all courses or single course
-app.get('/course', async (req, res) => {
+// GET - Obtener todos los cursos
+app.get('/course', authenticateToken, async (req, res) => {
   try {
     if (!req.query.id) {
       const data = await Course.find().populate('profesor_id');
@@ -141,8 +133,8 @@ app.get('/course', async (req, res) => {
   }
 });
 
-// PUT - Update course
-app.put('/course', async (req, res) => {
+// PUT - Actualizar
+app.put('/course', authenticateToken, async (req, res) => {
   try {
     const id = req.query.id;
     if (!id) return res.status(400).json({ message: 'id is required' });
@@ -168,8 +160,7 @@ app.put('/course', async (req, res) => {
   }
 });
 
-// DELETE - Delete course
-app.delete('/course', async (req, res) => {
+app.delete('/course', authenticateToken, async (req, res) => {
   try {
     const id = req.query.id;
     if (!id) return res.status(400).json({ message: 'id is required' });
@@ -184,15 +175,14 @@ app.delete('/course', async (req, res) => {
   }
 });
 
-// Serve static files from the client directory
+
 app.use(express.static(path.join(__dirname, '../client')));
 
-// For any other route, serve the index.html (SPA fallback)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
-// start the app
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`UTN API service listening on port ${PORT}!`);

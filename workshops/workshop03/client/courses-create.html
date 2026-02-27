@@ -15,6 +15,8 @@
     <nav>
       <ul>
         <li><a href="index.html">Inicio</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html">Registro</a></li>
         <li><a href="courses-list.html">Lista de Cursos</a></li>
         <li><a href="courses-create.html">Crear Curso</a></li>
         <li><a href="professors-list.html">Lista de Profesores</a></li>
@@ -56,14 +58,27 @@
     </div>
   </div>
 
+  // Dirección del servidor backend
   <script>
     const API_BASE_URL = 'http://localhost:3001';
+    const AUTH_TOKEN_KEY = 'authToken';
 
+    function requireAuth() {
+      const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      return token;
+    }
+
+    // Se ejecuta apenas carga la página
     window.onload = function () {
-      loadTeachers();
-      checkEditMode();
+      loadTeachers(); // Trae a los profesores
+      checkEditMode(); // Mira si vamos a editar uno existente
     };
 
+    // Revisa si en la URL viene un ID para cargar datos previos
     function checkEditMode() {
       const params = new URLSearchParams(window.location.search);
       const courseId = params.get('id');
@@ -74,12 +89,19 @@
       }
     }
 
+    // Pide al servidor la info de un curso específico
     function loadCourseForEdit(courseId) {
+      const token = requireAuth();
+      if (!token) return;
+
       const xhr = new XMLHttpRequest();
       xhr.open('GET', `${API_BASE_URL}/course?id=${courseId}`);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           const course = JSON.parse(xhr.responseText);
+
+          // Rellena el formulario con lo que devolvió la API
           document.getElementById('courseId').value = course._id;
           document.getElementById('nombre').value = course.nombre;
           document.getElementById('codigo').value = course.codigo;
@@ -105,8 +127,12 @@
     }
 
     function loadTeachers(callback) {
+      const token = requireAuth();
+      if (!token) return;
+
       const xhr = new XMLHttpRequest();
       xhr.open('GET', `${API_BASE_URL}/professor`);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           const teachers = JSON.parse(xhr.responseText);
@@ -149,9 +175,13 @@
     });
 
     function createCourse(courseData) {
+      const token = requireAuth();
+      if (!token) return;
+
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/course`);
       xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.onload = function () {
         if (xhr.status === 201) {
           showMessage('Curso creado correctamente', 'success');
@@ -169,9 +199,13 @@
     }
 
     function updateCourse(courseId, courseData) {
+      const token = requireAuth();
+      if (!token) return;
+
       const xhr = new XMLHttpRequest();
       xhr.open('PUT', `${API_BASE_URL}/course?id=${courseId}`);
       xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           showMessage('Curso actualizado correctamente', 'success');
@@ -192,5 +226,4 @@
   </script>
 </body>
 
-
-</html>\
+</html>
