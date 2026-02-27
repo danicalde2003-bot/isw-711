@@ -45,7 +45,6 @@
 
   <script>
     // Si no hay token, redirigimos al login.
-    // Esto hace que al abrir el proyecto (GoLive o servidor Express) lo primero sea autenticarse.
     const token = sessionStorage.getItem('authToken');
     if (!token) window.location.href = 'login.html';
   </script>
