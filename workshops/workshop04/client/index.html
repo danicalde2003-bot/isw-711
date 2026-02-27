@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Cursos - ISW-711</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Gestión de Cursos</h1>
+
+    <nav>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html">Registro</a></li>
+        <li><a href="courses-list.html">Lista de Cursos</a></li>
+        <li><a href="courses-create.html">Crear Curso</a></li>
+        <li><a href="professors-list.html">Lista de Profesores</a></li>
+      </ul>
+    </nav>
+
+    <p style="text-align: center; color: #666; margin-top: 20px;">
+      Bienvenido. Seleccione una opción del menú o use los accesos rápidos siguientes.
+    </p>
+
+    <div class="home-links">
+      <a href="courses-list.html">
+        <span>📋</span>
+        Ver lista de cursos
+      </a>
+      <a href="courses-create.html">
+        <span>➕</span>
+        Crear nuevo curso
+      </a>
+      <a href="professors-list.html">
+        <span>👨‍🏫</span>
+        Ver lista de profesores
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Si no hay token, redirigimos al login.
+    // Esto hace que al abrir el proyecto (GoLive o servidor Express) lo primero sea autenticarse.
+    const token = sessionStorage.getItem('authToken');
+    if (!token) window.location.href = 'login.html';
+  </script>
+</body>
+
+</html>
